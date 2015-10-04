@@ -1,0 +1,303 @@
+1、pl/sql的控制语句；
+   条件语句
+      分为三种写法：if..then/if...then...else/if..then...elsif...else
+       
+      a、if..then的语法结构：
+          if 条件表达式 then
+             执行语句
+          end if;
+          
+      案例： 写一个过程，输入一个雇员姓名，如果该雇员的工资低于200，就给该雇员工资增加10%；
+      
+      b、if..then..else的语法结构
+           if 条件表达式 then
+              执行语句...
+           else
+              执行语句...
+           end if;
+       
+      案例：编写一个过程，输入一个雇员姓名，如果该雇员的奖金不是0，就在原来的
+            基础上加100，如果不为0，则减100；（不考虑奖金为空的情况）
+      
+      c、if..then..elsif..then...else的语法结构
+           if 条件表达式 then
+              执行语句...
+           elsif 条件表达式 then
+              执行语句...
+           else 执行语句...
+           end if;
+      
+      案例：在上面例子的基础上加一个条件，如果奖金为空的话，就改为1
+      
+      练习：编写一个过程，输入一个雇员编号，如果该雇员的职位是president就给他的工资
+            增加1000，如果是Manager就给他的工资加500，其他的岗位的话，加200；
+            
+    
+    循环语句
+      a、loop，这是pl/sql中最简单的循环语句，这种循环语句以loop开头，以end loop
+         结尾，注意，这种循环至少会执行一次；
+         
+         结构：
+            loop
+            执行语句....:
+            exit when 条件表达式
+            end loop;
+            
+         练习：假如有一张表，表名为test，里面有2个字段，id和name，现在需要你写一个过程，
+         输入一个数量和一个name，就可以在test表里添加你输入数量的记录进去，并且每个记录
+         name字段都是你输入的name；
+         
+         代码：
+            create or replace procedure prop(v_in_id number,v_in_name varchar2) is
+            v_num number:=1;
+            begin
+              loop
+               insert into test values(v_num,v_in_name);    
+               exit when v_num=v_in_id;
+               v_num:=v_num+1;
+              end loop;
+            end;
+            /
+         
+         扩展：如果要求在上面的题目里面加一个条件，如果输入的值小于等于0的话，直接退出
+         
+         代码略...
+         
+         注意：在exit when里，退出的是一个循环，而不是整个程序
+            
+      b、while循环，基本循环语句至少会执行一次，但是对于while循环来说，只有条件为true
+         的时候，才会进行执行，while循环以while...loop开始，以end loop结束；
+         
+         结构：
+         while 条件表达式 loop
+         执行语句...；
+         end loop;
+         
+         练习：有一张表跟上述一样，需要编写一个过程，可以输入用户名，并循环添加10个用户到
+               表中，用户编号从10开始增加；
+               
+         代码：
+            create or replace procedure prop(v_in_ename varchar2,v_in_num number) is 
+            v_num number:=10;
+            begin
+              while v_num<=10+v_in_num  loop
+                insert into test values(v_num,v_in_ename);
+                v_num:=v_num+1;
+              end loop;
+            end;
+            /
+            
+       c、for循环，在这种循环中它跟java中的for循环很相似，会对某一个变量进行自增长的操作；
+          
+          结构：
+          for i in reverse 1..10 loop
+          执行语句;
+          end loop;
+          
+          不推荐使用for循环，建议使用loop循环结构；
+    
+    顺序控制语句--goto和null
+        a、goto
+          我们应该还记得，java里面是存在goto的保留关键字的，但是为了不破坏程序结构，所以不让
+          使用goto，那么goto到底是什么意思呢？有的同学应该用过循环里面指定跳到哪一层的那个语法
+          就是，break+变量；然后在指定的循环for的前面用一个变量:，这样可以使我们可以进行指定
+          地点的转跳，那么在pl/sql中，这种功能仍然有，而且用的关键字就是goto，记住了，它并不是
+          保留的，是可以正常使用的，那么它的使用就像java里的指定跳出到哪个循环一样，我们可以在
+          pl/sql里使用goto来指定程序往哪个地方走，那么，我们知道，光光有一个goto还不行，我还得
+          需要一个变量来指示这个goto怎么跳是吧？那么在pl/sql里，我们使用<<变量名>>这种结构来
+          指定需要用goto跳的变量；
+          
+        案例：
+           写一个块，在块里我们让一个变量进行自增长，从1开始，自增长到10的时候就结束自增长，使用
+           goto来实现；
+         
+        代码：
+           declare
+            i number:=1;
+           begin
+            <<start_loop>>
+                loop
+                dbms_output.put_line('i为：'||i);
+                if i=10 then
+                goto end_loop;
+                end if;
+                i:=i+1;
+                if i=10 then
+                goto start_loop;
+                end if;
+                end loop;
+            <<end_loop>>
+             dbms_output.put_line('循环结束');
+             end;
+        
+        注意：虽然pl/sql支持goto，但是尽可能的不要使用，容易破坏程序结构；
+        
+        b、null
+           这个语句没有任何作用，只是为了增加程序的可读性而已；
+           
+        案例：
+            declare
+            v_sal emp.sal%type;
+            v_ename emp.ename%type;
+            begin
+            select ename,sal into v_ename,v_sal from
+            emp where empno=&no;
+            if v_sal<3000 then
+            update emp set comm = sal*0.1 where ename=v_ename;
+            else
+            null;
+            end if;
+            end;
+            
+2、pl/sql与java之间的关联关系；
+    我们之前有使用java的JDBC来进行pl/sql的语句的执行，但是，当时我们执行的是一个
+    没有返回值的pl/sql是吧，如果有返回值呢？那么有返回值也分为两种情况，现在我们
+    通过jdbc来写一段java代码，用来处理pl/sql中有返回值的情况；
+    
+    a、没有返回值，比如增删改的操作：
+       代码略；
+    
+    b、有一个返回值：
+       比如，我们可以通过传入一个雇员编号来获取这个雇员的姓名；
+       
+       代码：
+           pl/sql代码：
+           
+           create or replace procedure prop(v_in_empno number,v_out_ename out varchar2) is 
+           begin
+              select ename into v_out_ename from emp where empno = v_in_empno;
+           end;
+           /
+           
+           java代码：
+           
+           public static void main(String[] args) {
+                Connection conn = null;
+                CallableStatement call = null;
+                String sql = "{call prop(?,?)}";
+                try {
+                    conn = ConnectionUtils.getConnection();
+                    call = conn.prepareCall(sql);
+                    call.setInt(1, 7788);
+                    call.registerOutParameter(2, oracle.jdbc.OracleTypes.VARCHAR);
+                    call.execute();
+                    String name = call.getString(2);
+                    System.out.println(name);
+                } catch (Exception e) {
+                }
+            }
+            
+    c、有多个返回值：
+       比如，我们通过一个部门编号获取到该部门下的所有雇员的信息；
+       
+       分析：首先，我们想想，我们在之前有写过存储过程返回一个结果集的，当时我们使用的是什么，
+             是不是游标啊？我们使用游标来指定每一行的数据，那么在这个题里，虽然我们要用到jdbc
+             来处理，但是可以确定的一点，结果集肯定是个参数，out的参数，并且需要是个游标类型，
+             然后，我们能直接使用游标类型吗？直接使用ref cursor类型？肯定是不行的，游标是不是
+             一个自定义类型？那么我们该怎么来使用这个游标类型呢？我们之前的学习中是使用什么来
+             容纳自定义类型的？是不是包啊？我们能不能先专门定义一个包，包里面再放一个自定义的
+             游标，然后再在其他的过程里面直接调这个包里的游标就行了啊？
+             
+       步骤：
+            ①、先定义一个包，包里面定义一个游标；
+            ②、写一个过程，过程里面有一个输入变量，叫v_in_deptno，一个输出的变量，是游标类型
+                用来接收查询里面的结果集；
+            ③、写一段java代码，用来执行这个过程，但是要注意的是，用什么来接收这个游标；
+            
+       pl/sql过程：
+            --第一步，先定义一个包，包里面定义一个游标
+            create or replace package mypack is
+            type my_cursor is ref cursor;
+            end;
+            /
+
+            --第二步，写一个过程，使用游标来接收返回集
+            create or replace procedure prop(v_in_deptno number,v_out_all out mypack.my_cursor) is 
+            begin
+              open v_out_all for select * from emp where deptno = v_in_deptno;
+            end;
+            /
+            
+       java代码：
+            --第三步，写一个java类，用来接收结果集并处理
+              public static void main(String[] args) {
+                Connection conn = null;
+                CallableStatement call = null;
+                String sql = "{call prop(?,?)}";
+                ResultSet rs = null;
+                try {
+                  conn = ConnectionUtils.getConnection();
+                  call = conn.prepareCall(sql);
+                        call.setInt(1, 20);
+                        call.registerOutParameter(2, oracle.jdbc.OracleTypes.CURSOR);
+                        call.execute();
+                        rs = (ResultSet) call.getObject(2);
+                        while(rs.next()){
+                            System.out.println(rs.getString(1)+","+rs.getString(2)+","+rs.getString(3)+","+rs.getString(4));
+                        }
+                    } catch (Exception e) {
+                    }
+                }
+     练习：
+          1、编写一个过程以及相关java代码，实现输入一个雇员编号，返回该雇员的姓名、工资以及岗位和工作了多少年；
+          2、编写一个过程以及相关java代码，实现输入一个工作地点，要求获取到在这个工作地点工作的所有人的具体信息，保存为emp实体对象输出来，
+             如果你输入的工作地点不存在的话，要求进行提示
+
+分页：
+    案例：要求写一个存储过程，要求可以输入表名、每页显示数量、要求显示第几页，
+          是否要对某个字段进行排序的排序的字段，返回总记录数，总页数和返回的结果集；
+          
+    分析：
+          a、我们先对这个题目进行拆分，一起做的话，压力有点大，我们先把需求改为如下：
+             编写一个存储过程，要求输入表名、每页显示的记录数、要求显示第几页，返回显示的结果集；
+             
+             pl/sql代码：
+             --编写一个存储过程，要求输入表名、每页显示的记录数、要求显示第几页，返回显示的结果集；
+                create or replace procedure myfenye(v_in_tableName varchar2,v_in_pagesize number,v_in_pagenow number,ref_out_data out mypack.my_cursor) is 
+                --声明一个处理分页的sql语句，分页的结果由游标来获取；
+                sql1 varchar2(2000);
+                --声明一个变量，用来表示分页的开始数据
+                start_num number;
+                --声明一个变量，用来表示分页的结束数据
+                end_num number;
+                begin
+                  --将下面的sql中的两个数字来跟传入的值之间做关联；
+                  --开始的数据=每页显示的记录数*（要求显示第几页-1)+1
+                  start_num:=v_in_pagesize*(v_in_pagenow-1)+1;
+                  --结束的数据=每页显示的记录数*要求显示第几页
+                  end_num:=v_in_pagesize*v_in_pagenow;
+                  --将一个分页的sql语句填写到之前什么的sql1变量中去，但是我们可以知道，这个sql语句写的是显式我们指定的一段数据，并且这个我们指定的数据是可以
+                  --跟传进来的每页显示的记录数以及要求显示的页数进行关联的，所以，我们定义几个变量用来处理这些关系
+                  sql1:=' select t2.* from (select rownum rn,t1.* from (select * from '||v_in_tableName||') t1 where rownum<='||end_num||') t2 where
+                   rn>='||start_num;
+                  open ref_out_data for sql1;
+                end;
+                /
+             java代码：
+                	public static void main(String[] args) {
+                        Connection conn = null;
+                        CallableStatement call = null;
+                        String sql = "{call myfenye(?,?,?,?)}";
+                        ResultSet rs = null;
+                        try {
+                            conn = ConnectionUtils.getConnection();
+                            call = conn.prepareCall(sql);
+                            call.setString(1, "emp");
+                            //每页显示5条
+                            call.setInt(2, 3);
+                            //从第二页开始显示
+                            call.setInt(3, 2);
+                            call.registerOutParameter(4, oracle.jdbc.OracleTypes.CURSOR);
+                            call.execute();
+                            rs = (ResultSet) call.getObject(4);
+                            while(rs.next()){
+                                System.out.println(rs.getString(1)+","+rs.getString(2)+","+rs.getString(3)+","+rs.getString(4));
+                            }
+                        } catch (Exception e) {
+                        }
+                    }
+            
+            练习：在上面的题目上加一个条件，可以对指定字段进行排序分页
+            
+            
+   

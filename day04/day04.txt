@@ -1,0 +1,179 @@
+上午：
+	
+	一：DML语言（数据库操作语言）：
+
+		   包括：insert(插入)，update(更新),delete(删除)这三种语言；
+		   
+		   在讲具体的DML语言之前，我们先介绍下DDL中的建表语句，然后用自己建的表来进行DML操
+		   作：
+		   
+		   1、如果创建一张表：
+		   		create table+表名(字段名 类型,
+		   									字段名 类型,)
+		   									......
+		   									字段名 类型);
+		   									
+		   		注意：在字段名跟类型之间是空格，不是逗号，在所有的参数写完之后，没有逗号了，从企业
+		   				  开发的角度来说，一般情况下，字段名跟表名都用大写，如果你想在指定的用户下面创
+		   				  建表的话，可以在表名前面加一个用户名.，如果不写的话，默认为当前用户创建表；
+		   		
+		   		例：create table scott.MYUSER(id number,name varchar2(32),sex char(3),age number);
+		   		
+		   2、如果复制一张表：
+		   		create table+表名+as+子查询；
+		   		注意，使用这种方式可以全张表的复制，也可以通过子查询的where条件来过滤掉一部分你
+		   		不想要的数据，也可以单单只复制表结构，不复制表数据；
+		   		
+		   		全张表的复制：
+		   			create table myemp as (select * from emp)
+		   			
+		   		带过滤条件的表复制：
+		   			create table myemp as (select * from emp where sal>1500);
+		   		
+		   		只复制表结构，不要数据：
+		   			create table myemp as (select * from emp where 1=2);
+		   			
+		   		注：只复制表结构的复制方式的意思就是在需要复制的表查询中给它一个为false的查询条件；
+          注：这种表的复制，不会复制表的约束；
+		   		
+		   3、insert语句：
+		   
+		   		语法：a）、insert into +表名(字段名1,字段名2....字段名n) values(值1，值2....值n)；
+		   		
+		   		注意：表名后面括号里的字段名都为这张表的字段，并不不一定需要写全，你只需要将你想
+		   				  插入的值所在的字段列出来就行了，并且values后面的值必须跟前面的字段名的类型
+		   				  想匹配且一一对应，如果有字段你没添加上去进行插值的话，那么会显示默认值，若
+		   				  你没有定义默认值，则显示为空；
+		   		
+		   		例：insert into myemp(empno,ename,job,mgr,hiredate,sal,comm,deptno) 
+     						  values(8888,'Edson','sales',7839,to_date('1990-12-27','yyyy-mm-dd'),8888,6666,40);
+     						  
+     			语法：b）、insert into +表名 values(依次把所有的列的值进行顺序排列)
+     			
+     			注意：这种插入的方式很死板，只能把所有的列的值都一一进行插入，必须写上所有列的值
+     					  ，如果某些字段你不想插入具体值，你可以直接写上null来插入空值；所以，在我们
+     					  对这两种插入方式的使用过程中，一般选择第一种，灵活些；
+		   		
+		   4、update语句：
+		   		
+		   		语法：update +表名+set+你要修改的列名=你想修改的值+where+你要针对修改的数据
+		   		
+		   		例：update myemp set comm = 1000 where comm is null;
+		   		
+		   		注意：如果你要修改多个字段的话，那么set后面接的字段修改以逗号隔开：
+		   		
+		   		例：将7369，8899,7788这三个雇员的领导和奖金取消
+		   		update myemp set mgr = null , comm = null where empno in (7369,8899,7788);
+		   		
+		   		例：将7369，8899,7788这三个雇员的领导的奖金取消
+		   		update myemp set sal = null where empno  in (select mgr from myemp 
+		   			where empno in (7369,8899,7788));
+		    
+		   5、delete语句：
+		   		
+		   		语法：delete+表名+where+条件；（表名前面可以加一个from，也可以不加）
+		   		
+	二、事务处理：
+		   
+		   1、事务：事务就是为了保证数据的完整和一致性，由一组相关的DML语句组成，该组的DML
+		   				  语句，要么全部成功，要么全部失败；
+		   				  如：网上的银行转账系统就是由事务来进行处理的；
+		   				  
+		   2、事务的起止：起于第一条DML语句，结束与commit或者rollback或者其他的DDL语句或者
+		   						    正常的关闭窗口
+		   						    
+		   3、事务的处理：
+		   			a）、commit：提交
+		   					表示将commit以上的那个事务进行提交，提交之后，之前的那些DML语句才算真正
+		   					地进行了执行，在你进行commit之前你所使用DML语句的操作的那些结果都只是
+		   					Oracle提供给你看的一个视图，并不是真正地修改了数据；
+		   					
+		   		 	b）、rollback：回滚
+		   		 			表示将rollback以上的那个事务进行回退，也就是说将数据恢复到这个事务之前的
+		   		 			状态而不让这些DML语句对数据进行修改；
+		   		 			
+		   演示使用commit、rollback、DDL、关闭窗口这四种情况对事务的影响；
+		   
+		   注意事项：
+		   			
+		   			a）、DDL是隐式提交的语句；DML是显式提交的语句；
+		   			
+		   			b）、使用DDL操作数据库的话，一旦执行就会同步到数据表中去，而DML语句执行之后
+		   					 并没有提交到数据表中，而是生成了一个结果视图给你查看，必须使用事务的结束
+		   					 语句来进行提交；
+		   			
+		   			c）、一旦使用了事务的结束条件之后，就意味着这个事务已经结束，那么此时不管你如何
+		   					执行rollback都没法去回滚了，因为之前的事务已经结束；
+		   					
+		   	4、事务锁机制：
+		   			oracle为了提高数据的一致性，所以如果一个用户在进行对某一张表的某个数据进行DML
+		   			操作的时候，其他的用户一旦操作这个数据，就会被挂起，没有任何反应，直到原来的那
+		   			个用户把事务结束掉后面这个用户的操作才会被解锁；
+		   			
+		   	5、自定义事务保存点：
+		   			savepoint + 变量；
+		   			
+		   		 回滚到自定义的保存点位置：
+		   		 	rollback to +你想回退到的那个地点的变量
+		   		 	
+		   	6、设置事务为只读：
+		   			
+		   			set transaction read only;
+		   			设置之后，这段事务只能读，不能使用DML操作,使用commit、rollback结束；
+		   			注意：这句话必须设置在一个事务的开始位置，否则会报错；
+            注意：SYS用户并不受SET TRANSACTION READ ONLY的影响：
+		   			
+	三、DDL语句
+		   
+		   1、创建表，见上面；
+		   		
+		   		default的使用：当你在创建表时，可以在某一个列的类型后面加一个default关键字，然后
+		   								跟上你想要默认的值，记住，这个值必须跟这个列的类型相匹配；
+		   		
+		   		例：create table myuser(id number ,name varchar2(32),sex char(3) default '女');
+		   		
+		   2、删除表:
+		   		语法：drop table+表名；
+		   		
+		   3、表的修改：alter table+表名+其他操作；
+		   		
+		   		a）、列的追加：
+		   				语法：alter table +表名+add(字段名 类型，字段名，类型....字段名，类型)；
+		   				
+		   				例：alter table myuser add(age number default 18,sal number(7,2) default 0);
+		   				
+		   		b）、列的修改：
+		   				语法：alter table +表名+modify（你要修改的列名 类型,你要修改的列名 类型....）;
+		   				
+		   				例：alter table myuser modify(sex varchar2(3) default '男');
+		   				
+		   				注意：列的修改不能修改列的名称，只能修改这个列的类型及默认值，另外，你修改
+		   						  的列的类型如果数据库里已经存有原类型的数据的话，那么你将不能违背原数
+		   						  据的类型以及长度原则进行修改；比如，一个number类的字段，你不能改为
+		   						  varchar2类型，比如一个varchar2的类型中存了一个长度为20的数据，那么你
+		   						  将不能新的类型的长度修改为20以下；
+		   						  
+		   		c）、列的删除：
+		   				语法：alter table+表名+drop column+列名
+		   				
+		   				例：alter table myuser drop column name;
+		   				
+		   				注意：列的删除能够删除那些带有数据的列，并且删除之后，当列的数据跟着消失；
+		   				
+		   4、DDL的数据清空操作：
+		   		
+		   			truncate table+表名；
+		   			
+		   			这个DDL操作与DML操作中的delete的区别：
+		   			
+		   			a）、操作SQL类型的不同，一个是DML，一个是DDL；
+		   			
+		   			b）、因为类型不同，造成他们提交方式也不同，一个是显式，一个隐式，所以一个可以
+		   					回滚，一个不能回滚；
+		   					
+		   			c）、因为一个允许回滚，那么删除的时候会占用系统的资源，所以允许回滚的删除速度
+		   					比不允许回滚的稍慢，当数据量庞大时，允许回滚的删除，速度会很慢；
+		   					
+		   5、表的重命名：
+		   
+		   		语法：rename 原表名 to 新表名

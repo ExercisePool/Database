@@ -1,0 +1,204 @@
+上午：
+
+	数字函数：
+	
+		1、数值四舍五入运算：round；
+			 语法：round(number1[,number2]);
+			 如果只有number1的话，那么进行舍去小数点位，进行四舍五入运算，如果有number2的话，
+			 那么就分两种情况，如果为正，则保留小数点右边number2个长度的小数，多余的舍去并做
+			 四舍五入运算；如果为负，则把小数点左边的number2个长度的数字以0替代并且舍去小数点
+			 后的数字；
+			 
+			 例：select round(123.556) from dual;--124;
+			 	    select round(123.456,2) from dual;--123.46;
+			 	    select round(123.456,-2) from dual;--100;
+			 	    
+		2、取余运算：mod；
+			 语法：mod(number1,number2);
+			 使用number1来对number2进行取余运算；
+			 注意，如果number2是负数的话，结果不会为负，相当于是对number2的绝对值进行取余运算
+			 
+			 例：select mod(10,2) from dual;--0;
+			 
+		3、数字截取：trunc；
+			 注意：此函数跟round方法一模一样，只不过进行的是截取，不是四舍五入；
+			 
+		4、绝对值：abs；
+			 就是求绝对值呗；
+			 
+	日期函数：
+		
+		1、last_day：求出某个日期所在月份的最后一天；
+			 语法：last_day(date)；
+			 
+			 例：select sysdate,last_day(sysdate) result from dual;
+
+				    select hiredate,last_day(hiredate) result from emp;
+				    
+		2、next_day：基于一个参数的时间为基准，来求出第二个参数的日期
+			 语法：next_day（date，char）；
+			 其中，char这个地方必须要放一周中某一天的表现形式，比如你可以放'星期一'等。。也可以放
+			 monday等，也可以放1-7的数字，记住各种写法的表现形式；
+			 
+			例： select sysdate,next_day(sysdate,1) from dual;
+			
+		3、months_between：拿到两个日期之间的月数，注意，返回值是浮点数；
+			 语法：months_between(date1,date2);
+			 注意：这两个日期，是前面一个日期减后面一个日期，所以，如果你把现在时间放在后面的参数
+			 		   里面的话，会出现负数的结果；
+			 		   
+			 例：select months_between(sysdate,hiredate) from emp;
+			 
+		4、add_months:在指定的日期上面做月份的增减操作；
+			 语法：add_months(date,number);
+			 注意：当number为正时，表示在date的基础上进行月份的追加，如果为负，则代表减少；
+			 		   这个月份的增减代表的是在日期上进行月份的调整，并不是指增加或者减少30*月份；
+			 		   
+			 例：select sysdate,add_months(sysdate,3) from dual;
+			 	   select sysdate,add_months(sysdate,-3) from dual;
+			 	   
+	日期转换函数：
+		
+		1、日期转字符串：to_char；
+			  语法：to_char(date,mode);
+			  注意：参数中的mode表示一个字符串，里面用来描述你想要转换成哪个日期格式，其中mode
+			  		    类似于java中的simpleDateFormat后的参数，但是需要注意的是，MM和HH不用再分
+			  		    大小写，并且Oracle中表示分钟的mode为mi；其他具体的mode参考API，需要注意一
+			  		    点，里面的月份跟星期是根据你Oracle上的编码形式来进行的；
+			  		    
+			  例：
+			  		select to_char(sysdate,'yyyy-MM-dd') from dual;
+					select to_char(sysdate,'yyyy-mm-dd') from dual;
+					select to_char(sysdate,'yyyy-MM-dd hh:mi:ss') from dual;
+					select to_char(sysdate,'MONTH') from dual;
+					
+		2、字符串转日期：to_date;
+			  具体语法跟上面类似，只需要注意一点，在mode里面，不在乎你书写的格式，反正Oracle都会
+			  以标准格式进行date的输出；
+			  
+			  例：
+			  		select to_date('120314','hh24/mi/ss') from dual;
+			  		
+		3、字符串转数字：to_number;
+			 注意：要进行合理的转换；
+			 
+			 例：select to_number('1234') from dual;
+			 
+	通用函数：
+	
+		1、nvl;
+		
+		2、nullif：nullif（表达式1，表达式2）：如果两个表达式相等，则返回null，否则返回表达式1；
+			 
+			 例：select nullif(2,3) from dual;
+			 
+		3、nvl2：nvl2（表达式1，表达式2，表达式3）：当表达式1不为null的时候，返回2，否则返回3；
+			 
+			 例：select nvl2(comm,sal+comm,sal) sal from emp;
+			 
+		4、coalesce：coalesce（表达式1，表达式2，表达式3，表达式4......）:依次顺序从前往后进行
+			                   校验，遇到非null的时候，就停止校验并且返回那个非null的值；
+			                  
+			 例：select coalesce(sal+comm,sal,0) sal from emp;
+			 
+		5、case...[when...then]*...else...end:用来分段表示的函数，其中case后面接的是需要分段表示的
+															  列名，when后面跟这个列有可能出现的值，then后面跟出
+															  现这种值的话，如何处理，else代表的是其他情况，end代
+															  表结束；跟java中的switch类似；
+															  如果需要对一个表达式进行判断的话，那么一般情况下case
+															  后面不用跟任何值；
+															  
+			 例：select empno,ename,deptno,case deptno 
+                                                  when 10 then '开发部' 
+                                                       when 20 then '集成部'  
+                                                            when 30 then '销售部' 
+                                                                 else '其他部门'
+                                                                    end  as 部门 from emp;
+                                                                    
+         6、decode():作用跟上面的类似；
+         	  语法：decode（列名，[列名有可能出现的值，出现这个值做的处理]*,如果出现其他情况所做的处理）；
+         	  
+         	  例：select empno,ename,deptno,decode(deptno,
+         	  																			10,'开发部',
+         	  																			20,'集成部',
+         	  																			30,'销售部',
+         	  																				 '其他部门') "部门" from emp;
+         	  																				 
+         	  注意：这里开始用到了双引号，在起别名的时候，如果使用中文的别名的话，可以直接写中文
+         	  	         也可以写上双引号，但是不能写单引号；
+	
+	分组函数：
+		
+		1、count：数量统计；
+			 
+			 我们一般使用count来统计一张表中的数据数量或者是统计一张表中某个字段的数量（如果你需
+			 要统计的字段有重复的情况发生的话，要附带着使用distinct来去重复再进行数量统计）；
+			 
+			 例：select count(*) from emp;
+ 
+				    select count(distinct(deptno)) from emp;
+				    
+		2、max、min、avg、sum；
+			 注意：在使用分组函数来进行某些操作的时候，会自动忽略掉空值；
+			 
+			 例：select avg(nvl(comm,0)) from emp;
+			 
+		3、group by：分组查询；
+		
+			 按照你想要的分组规则来对数据进行相同数据为一组并且进行分组的操作；
+			 
+			 例：查询出不同部门里面的员工数量：
+			 	    select deptno,count(*) from emp group by deptno;
+			 	    
+			 如果某一天，你想对不同工作岗位进行分组的话，那么第一想法是把group by 后面的字段改为
+			 job，但是会报错，因为这违反了分组查询的第一条定律：
+			 
+			 a）、如果列名（或者是单行函数）和组函数同时出现在查询条件中的话，那么必须在group by
+			 	      后面跟上这个列名或者是单行函数所使用的列名；
+			 	      
+			 b）、如果你想查出各种job下的员工数量的话，那么如果你不使用group by，就会报错；
+			 
+			 c）、如果你想在组函数中去使用带组函数的条件判断的话，需要使用having关键字；后面跟
+			 		 组函数的判断条件；
+			 		 
+			where和having：
+			
+				a）、都是用来在sql语句中进行条件判断的关键字，后面都是跟条件判断语句；
+				
+				b）、where后面跟的是单行函数的判断语句，having后面跟的是组函数的判断语句；
+				
+				c）、where一般放在from+表名之后，having一般放在group by+列名之后；
+				
+				例：
+					select job,deptno,count(*) from emp where sal>1000 group by job,deptno 
+					having max(sal)>1000;
+			 		 
+			 注意：单行函数（或字段名）可以在查询条件中出现多个，如果出现多个，就必须同时也出现
+			 		   在group by中；
+			 		   如果你想在使用分组查询之后再进行排序，那么order by 一定要写于最后面；
+			 		   排序的时候，可以对别名进行排序；
+			 		   order by后面可以接多个排序列名；
+			 		   
+		4、组函数的嵌套：
+		
+			 含义：就是使用多个组函数嵌套放在查询条件中；
+			 
+			 注意：组函数的嵌套不能跟单行函数或者是列名一起使用，并且必须使用group by来进行分组，
+			 		   此时，因为查询条件中没有单行函数，所以分组的条件可以自己根据需求来指定；
+			 		   
+			 		   
+			 例：
+				 	select deptno,avg(sal) from emp group by deptno;
+					select max(avg(sal)) from emp group by deptno;
+					
+			  注：第一行语句只是为了方便去理解第二行语句，实际上与嵌套函数无关；
+			  
+			  这里可以看出：查询列表中出现的单行函数一定要出现在group by中，但是group by中出现
+			  						 的单行函数不一定需要出现在查询列表中（比如嵌套组函数）；
+			 		   
+		练习：查询包含1981年5月1日和之后入职的并且平均工资大于1200的部门、工作和平均工资值，
+				  并且以部门和工作进行升序排序	 
+				  
+				  select deptno,job,avg(sal) from emp where hiredate>=to_date('1981-05-01','yyyy-mm-dd') 
+				  		group by deptno,job having avg(sal)>1200 order by deptno,job;
+			 		 

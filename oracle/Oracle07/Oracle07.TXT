@@ -1,0 +1,129 @@
+上午：
+	同义词（Oracle独有）：
+	
+		概念：类似于dual这张表的使用方式，对某一张表进行设置为同义词可以让其他用户不需要通过
+				  用户名.表名的方式来进行表的访问，而是可以直接让其他用户操作在他们用户下没有的这
+				  张表；
+				  
+		使用：同义词分为私有同义词以及公有的同义词：
+		
+				  私有同义词，Oracle在synonym前面默认了一个private，让这个同义词创建出来之后只能
+				  给本用户去使用，所以如果你创建的是私有的同义词的话，那么同义词的词名是不允许跟原
+				  表名相同的；
+				  
+				  公有同义词，为了方便给其他用户去使用同义词，所以你需要在synonym前面加一个public
+				  来告诉oracle这个同义词是公有化的，是允许其他用户使用的，因为是公有化的，所以允许
+				  同义词跟表名相同，注意，当你需要删除公有的同义词时，记得在synonym前加public；
+				  
+		授权：如果你创建的同义词其他用户无法使用的话，是因为你没有为其他用户去授权，授权如下：
+				  grant select/delete/update/insert on magic to scott;
+				  
+		删除：drop synonym,如果是公有的话，要在synonym后面加个public
+		
+		同义词的操作顺序见相应的sql文件；
+		
+	集合：
+		
+		并：union 忽略重复的并；
+			   union all 不忽略重复的并；
+			   
+		差：minus 第一个结果集减去第二个有重复数据的结果集，注意，结果集的顺序会影响差的结果；
+		
+		交：intersect 两个结果集之间的交
+		
+		注意：在进行集合的交并差的操作之前，需要先保证这两个结果集的列要一致；
+		
+	视图（view）：
+		
+		概念：视图就是将一个复杂的查询语句进行封装，为了方便日后的查看和节省查询效率；
+		
+		创建：create view+视图名+as+子查询
+		
+		修改：create or replace view +视图名+as+子查询
+		
+		删除：delete view +视图名
+		
+		视图的约束条件:
+		
+		a、不允许修改视图的创建条件：
+			  with check option;
+			  
+		b、设置视图为只读：
+			  with read only；
+			  
+		视图的操作见相应的sql文件
+
+下午：
+		
+	用户管理（user）：
+		
+		有关用户的操作都要在DBA权限下进行；
+		
+		用户的创建：create user liumingcheng identified by a888888;
+		
+		用户连接的授权： grant sesson to liumingcheng;
+		
+		用户的授权：grant connect,resource to liumingcheng;
+		
+		修改用户密码：alter user liumingcheng identified by aaaaaa;
+		
+		用户的锁定：alter user liumingcheng account lock;
+		
+		用户的解锁：alter user liumingcheng account unlock;
+		
+		用户的删除：drop user liumingcheng cascade; 
+		
+		授予其他用户表的权限：grant all on scott.emp to liumingcheng;
+		
+		收回权限：revoke  all on scott.emp from liumingcheng;
+		
+		查看权限：select * from user_sys_privs;
+		
+	序列（sequence）：
+		
+		概念：是oacle提供的用于产生一系列唯一数字的数据库对象。
+		
+		语法：CREATE SEQUENCE sequence  //创建序列名称
+		       [INCREMENT BY n]  //递增的序列值是n 如果n是正数就递增,如果是负数就递减 默认是1
+		       [START WITH n]    //开始的值,递增默认是minvalue 递减是maxvalue
+		       [{MAXVALUE n | NOMAXVALUE}] //最大值
+		       [{MINVALUE n | NOMINVALUE}] //最小值
+		       [{CYCLE | NOCYCLE}] //循环/不循环
+		       [{CACHE n | NOCACHE}];//分配并存入到内存中
+		       
+		 使用：序列自带了两个字段，分别为：nextVal、currVal，nextVal相当于java集合中的指针
+		 
+		 注意：
+		 	在如下的几种情况下，序列的使用会产生裂缝（即没有按照你想要的增减顺序来进行）
+
+			a、   序列在下列情况下出现裂缝:
+			b、   回滚
+			c、   系统异常
+			d、   多个表同时使用同一序列
+		 
+		 序列的修改：
+		 
+		 	alter sequence+序列名+你需要修改的参数；
+		 	
+			修改序列的注意事项：
+			
+			a、   必须是序列的拥有者或对序列有 ALTER 权限
+			b、   只有将来的序列值会被改变
+			c、   改变序列的初始值只能通过删除序列之后重建序列的方法实现
+			
+		序列的删除：
+			
+			drop sequence+序列名
+			
+	数据表（table）：
+		
+		1、数据表是数据库中一个非常重要的对象，是数据库中其他对象的基础；
+		
+		2、数据表是数据库中最重要的组成成分之一，数据库知识一个框架，数据表才是实质上的内容
+			 ，根据数据分类情况，一个数据库中可以包含若干个数据表；
+			 
+		3、一个数据库相当于是一个仓库，而数据表就是仓库里的各种不同类型的货架，货架上可以放
+			 各种类型的货物；
+			 
+		注意：别混淆数据表跟表空间；
+			

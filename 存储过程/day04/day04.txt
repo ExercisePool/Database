@@ -1,0 +1,299 @@
+1、分页：
+    在昨天的学习里，我们对oracle的存储过程进行分页进行了一个了解，那么，让我们来想想，
+    在我们昨天的分页里，它是否还有一些缺陷可以进行补充的地方？我们已经可以通过昨天的
+    例子来通过录入每页的显示数量以及你要显示的当前页来查看具体的数据了，那么有一个问
+    题，我们怎么才能知道这个表中数据的总数量呢？以及我怎么才能知道这个表有多少页呢？
+    这些问题是不是在我们实际生活中运用分页都会看到的啊？那么，我们来在昨天的基础上追
+    加两个条件：
+    
+    练习：编写一个过程，我希望我录入了表名、每页数据数、当前页数之后，能给我指定页的
+          数据，并能告诉我总共有多少页，有多少条数据；
+          
+          
+      综合练习：
+          分页
+            需求：查看所有的雇员的工资---view，当用户输入view以后，会提示用户输入查看第几页，每页显示几条数据，按哪个列名排序；
+                  按照雇员id来查询雇员工资---view of
+                  添加一个新的雇员--add
+                  按照id来更改一个雇员的信息--change
+                  按照id来删除一个雇员--remove
+                  退出系统--exit；
+                  
+2、触发器
+    首先，让我们来回顾我们之前做项目的时候的一个操作，比如，我们在用户登录的同时，想
+    获取到当前用户以及该用户的登陆时间，那我们是怎么做的？是不是同时使用两个preparedstatement
+    对象来对两个sql语句进行操作，从而一边进行登录，一边查询用户名和登陆时间啊？也就是说，我们
+    如果想达到这种效果的话，需要在java中逐步的去对数据库进行操作才能得到我们想要的结果是吗？
+    那么，有没有可能让我们对数据库发送一条请求，数据库就给我们做这两件事情呢？再来一个例子，
+    我们在对数据库中某张表进行数据的操作时，能不能操作完毕之后，就提示我们说数据库完成了XXX操
+    作？答案是肯定的，但是我们依旧是在java中进行这些操作的，也就是说我们发送一个请求到数据库中
+    ，得到某个反馈之后，再经过java来获取这个结果，再进行某些判断的操作吧？我们能不能像之前那个
+    例子一样，当我们发送一个请求给数据库，然后数据库就能把所有的事情给做好？答案是肯定的，oracle
+    提供了一个叫做触发器的对象，可以让数据库智能起来，当我们对指定的某张表或者某个字段进行操作
+    后，数据库就会自动地去做一个我们所要求的操作，而不需要我们发送两次请求或者拿到结果再判断；
+    再来问一个，比如我们有一个需求，我们公司周末都是双休的，那么如果你在周末进行某张表的操作时，
+    数据库就会拒绝你的操作，这个我们能实现吗？
+    
+    然后，我们来看看触发器的概念：
+    触发器是一个特殊的存储过程，它的执行即不是我们手动去执行的，也不是由程序去调用的，而是一个类似于
+    监听一样的对象，是由事件来进行触发的，当我们对表的DDL或者DML操作的时候它就会被激活并执行。
+    
+    触发器和存储过程的区别：
+    触发器跟存储过程的唯一区别，就是触发器不用我们去使用exec命令去执行，而是我们在进行某些sal语句
+    操作的时候自动执行；
+    
+    根据触发器的作用，分为三种：
+        DDL触发器；
+        DML触发器；
+        系统触发器；
+    
+    触发器的语法结构：
+    
+        CREATE [OR REPLACE] TRIGGER <triggerName>
+        <[ BEFORE | AFTER ]> < [ INSERT | UPDATE | DELETE ] >
+        ON [dbo]<tableName> --dbo代表该表的所有者
+        FOR EACH ROW --是否针对所有的行
+        BEGIN
+        --do something
+        END;
+    
+    a、DML触发器：    
+    
+    案例：当我们对某张表进行添加操作时，由数据库进行提示说我们添加了一条数据；
+       
+        create or replace trigger mytrigger 
+        after  insert
+        on myemp
+        begin
+          dbms_output.put_line('添加了一条数据');
+        end;
+        /
+    
+    注：这种对表的操作发生作用的触发器，我们称之为表级触发器；
+        
+    案例：当我们对某张表的数据进行删除的时候，数据库会自动提示我们删除了多少条数据；
+    
+        create or replace trigger  mytrigger
+        after delete
+        on myemp
+        for each row
+        begin
+          dbms_output.put_line('删除了一条数据');
+        end;
+        /
+    
+    注：这种对每一行的操作发生作用的触发器，我们称之为行级触发器；
+    
+    案例：当周末的时候，不允许对某张表中的数据进行删除操作；
+    
+        create or replace trigger mytrigger
+        before delete
+        on myemp
+        begin
+          if to_char(sysdate,'day') in ('星期六','星期日')
+            then dbms_output.put_line('周末不准删除！');
+          end if;
+        end;
+        /
+        
+    我们发现，这样操作，虽然非周末进行删除会进行错误信息的打印，但是信息却依旧删除了，
+    我们来回头看看这个代码，发现，虽然我们这里给定了具体条件，满足就做某件事情，但是
+    这个事情只是进行打印信息罢了，按照我们java的处理习惯，我们需要使用异常来处理，但是
+    这个异常是我们自己定义的，又不能去使用API去查询具体使用哪个错误，这时，我们要来了解
+    一个oracle提供的一个自定义异常的存储过程：
+    
+        procedure RAISE_APPLICATION_ERROR(自定义错误代码,自定义错误信息)；
+    
+    在上面的自定义异常里，第一个参数为number类型，并且我们能定义的自定义错误代码的范围也
+    是有约定的，只能是-20000到-20999之间；第二个参数为varchar2类型，可以由我们自己书写我
+    们想输出的错误内容；
+    
+    代码：
+        create or replace trigger mytrigger
+        before delete
+        on myemp
+        begin
+          if to_char(sysdate,'day') in ('星期六','星期日')
+            then dbms_output.put_line('周末不准删除！');
+            raise_application_error(-20001,'周末不准删除雇员！');
+          end if;
+        end;
+        /
+        
+    上面我们写的只是对这个表在指定的时间不允许删除，如果我们是在指定的时间点里不允许所有的DML
+    操作，那么该怎么写呢？
+    
+    代码：
+        create or replace trigger mytrigger
+        before delete or update or insert 
+        on myemp
+        begin
+          if to_char(sysdate,'day') in ('星期六','星期日')
+            then dbms_output.put_line('周末不准删除！');
+            raise_application_error(-20001,'周末不准删除雇员！');
+          end if;
+        end;
+        /
+        
+    在上面的例子中，我们看到，我们的目的达到了，只要在指定日期进行所有的DML操作，都会提示
+    错误，但是出现了，另外一个问题，所有的错误都是同一个错误，那么，我们如何在触发器body
+    中去分情况处理呢？
+    
+    代码：
+        create or replace trigger mytrigger
+        before delete or update or insert 
+        on myemp
+        begin
+            if to_char(sysdate,'day') in ('星期六','星期日') 
+            then
+              case 
+                when deleting then 
+                raise_application_error(-20001,'周末不准删除雇员！');
+                when updating then 
+                raise_application_error(-20002,'周末不准修改雇员！');
+                when inserting then 
+                raise_application_error(-20003,'周末不准插入雇员！');
+              end case;
+          end if;
+        end;
+        /
+        
+    注意：在when后面操作的动词的使用；
+    
+    案例：要求我们在对emp表的sal字段进行操作的时候，要求修改的工资不能低于原来的工资，并且
+          要求输出现在和原来的工资；
+          
+    代码：
+        create or replace trigger mytri 
+        before update
+        on emp
+        for each row 
+        begin
+          if :old.sal>:new.sal then 
+             raise_application_error(-20001,'你不能降低工资啊！');
+          else
+            dbms_output.put_line(:old.ename||'之前的工资是：'||:old.sal||',现在的工资是：'||:new.sal);
+          end if;
+        end;
+        /
+        
+    练习：编写一个触发器，要求我们在删除emp表中的每一条数据的同时，也对emp表中的empno和ename和sal这三个
+          字段的数据备份到另外一张表中去；
+          
+    代码：
+        create table emp_bak(empno number,ename varchar2(32),sal number);
+        
+        create or replace trigger mytri
+        before delete
+        on emp
+        for each row
+        begin
+          insert into emp_bak values(:old.empno,:old.ename,:old.sal);
+        end;
+        /
+    
+    练习：要求我们在对emp表的sal字段进行操作的时候，要求修改的工资不能低于原来的工资并且还要求工资
+          不能高出之前的20%，并且要求输出现在和原来的工资；
+          
+    代码：
+        create or replace trigger mytri 
+        before update
+        on emp
+        for each row 
+        begin
+          if (:old.sal>:new.sal or :old.sal*1.2<:new.sal) then 
+             raise_application_error(-20001,'你不能降低工资啊！');
+          else
+            dbms_output.put_line(:old.ename||'之前的工资是：'||:old.sal||',现在的工资是：'||:new.sal);
+          end if;
+        end;
+        /
+        
+    练习：创建一张带有出生日期字段的表emp2，不允许该表中出现童工，即18岁以下的人，也就是说，如果添加员工
+          的年龄没有18岁，则不能追加进来；
+          
+    练习：有两张表，一张学生表，一张班级表，要求如果学生表里的学生删除了一个，就让班级表里的总人数减少一个
+          
+    
+    b、系统触发器
+       所谓的系统触发器，就是指当你对数据库进行某些系统操作的时候，可以进行指定的触发，比如
+       系统的登陆，退出，启动等系统操作，在这种触发器中，oracle提供了一些常用的函数进行使用
+       比如：
+            ora_client_ip_address:即返回客户端的ip地址；
+            ora_database_name：即返回数据库的库名；
+            ora_login_user：即返回数据库登陆的用户名；
+            ora_sysevent：即返回触发某个触发器的事件名，比如增加、删除等；
+            ora_des_encrypted_password：即返回用户加密后的密码（md5）
+            
+       基本语法结构：
+       
+            CREATE [OR REPLACE] TRIGGER <triggerName>
+            <[ BEFORE | AFTER ]> < [ LOGON | LOGOFF ] >
+            ON DATABASE 
+            BEGIN
+            --do something
+            END;
+            
+       注：因为这种触发器的级别比较高，所以这种触发器只能由sysdba的权限进行登陆才能操作
+       
+       案例：创建一个触发器，用来记录用户用户名以及登陆时间，退出时间以及IP地址；
+       
+       代码：(注意，先登录dba账户)
+            create table db_log(username varchar2(32),login_time date,logoff_time date,ip_dress varchar2(100));
+
+            create or replace trigger tri_login 
+            after logon 
+            on database 
+            begin
+              insert into db_log(username,login_time,ip_dress) values(ora_login_user,sysdate,ora_client_ip_address);
+            end;
+            /
+
+            create or replace trigger tri_logoff
+            before logoff 
+            on database
+            begin
+               insert into db_log(username,logoff_time,ip_dress) values(ora_login_user,sysdate,ora_client_ip_address);
+            end;
+            /
+            
+    c、DDL触发器
+       顾名思义，这种触发器就是我们在进行表结构操作的时候进行触发的触发器；
+       那么，这种触发器跟系统触发器一样，也是属于一种管理员操作的触发器，只有dba权限的才能使用，普通用户是无法使用的；
+       它的主要作用，就是用来记录其他普通用户的一些表操作；
+       
+       基本语法结构：
+       
+            CREATE [OR REPLACE] TRIGGER <triggerName>
+            <[ BEFORE | AFTER ]> DDL
+            ON scott.schema 
+            BEGIN
+            --do something
+            END;
+            
+       案例：比如我们需要使用dba权限进行一个管理，创建一张表，用来记录所有普通用户的DDL操作，具体是记录普通用户的用户名，
+             DDL操作事件以及操作时间；
+             
+       代码：(注意，要先登录dba用户)
+            create table db_ddl(username varchar2(32),ddl_time date,db_event varchar2(100));
+
+            create or replace trigger tri_ddl 
+            after ddl 
+            on scott.schema 
+            begin
+              insert into db_ddl values(ora_login_user,sysdate,ora_sysevent);
+            end;
+            
+触发器的其他管理：
+    a、禁止触发器
+       让触发器临时失效
+       alter trigger 触发器名 disable
+       
+    b、激活触发器
+       alter trigger 触发器名 enable;
+       
+    c、激活/禁止一张表中所有的触发器
+       alter table 表名 disable/enable all triggers;
+    
+    d、删除触发器
+       drop trigger 触发器名

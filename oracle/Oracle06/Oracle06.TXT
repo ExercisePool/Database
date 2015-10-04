@@ -1,0 +1,177 @@
+上午：
+	约束：
+	
+		1、主键约束（primary key）：
+		
+			 a、主键约束一般在一张表的第一个列上，即id上作为这张表的唯一标识符来使用，主键本身
+			 	  的特性就确定了它不能为空且不能重复的特点，所以一旦某个字段使用主键来约束了，就
+			 	  一定为空且不能重复；
+			 
+			 b、主键约束有两种写法，第一种，直接在你想加主键约束的列的类型后面加上一个 primary
+			 	   key即可；第二种，在建表语句的最后面，加上使用constraint关键字来进行约束的追加
+			 	   即：constraint +错误信息+primary key（列名），表示在括号里面的那个列上加上主键
+			 	   约束，并且如果出现违反主键约束的情况的话会报你自定义的错误信息；
+			 	   
+			 	   例：create table myuser(id number primary key,uname varchar2(32),
+			 	   				upassword varchar2(32));
+			 	   				
+			 	   例：create table myuser(id number,
+                               uname varchar2(32),
+                               upassword varchar2(32),
+                               constraint myuser_id_pk primary key(id)
+                               );
+			 	   
+			 c、错误信息的书写格式：
+			 
+			 	  在constraint后面我们跟的都是发生这种约束的错误信息，一般情况下，书写为：
+			 	  表名_列名_约束简写
+			 	  
+			 	  例：constraint myuser_id_pk primary key(id)
+			 	  
+		2、唯一约束（unique）：
+				
+				a、这种约束就是不能让这个列上的数据重复；
+				
+				b、唯一约束并不会约束这个列能不能插null值，但是在很多时候，有唯一约束的地方都是
+					 不能为空的，所以非空约束常常和唯一约束一起使用；
+					 
+				c、如果有多个约束同时出现在一个列上时，不同的约束使用空格隔开；
+					 
+					 例：not null unique
+					 
+				d、唯一约束也有两种写法，与主键约束类似：
+					 
+					 例：create table myuser(id number primary key,uname varchar2(32) 
+					 			not null unique,upassword varchar2(32));
+
+					 例：create table myuser(id number,
+                               uname varchar2(32) not null,
+                               upassword varchar2(32),
+                               constraint myuser_id_pk primary key(id),
+                               constraint myuser_uname_uk unique(uname)
+                               );
+                               
+           3、非空约束（not null）：
+           
+           		a、表示某个列的数据插入不能为空值；
+           		
+           		b、非空约束不需要你使用constraint去书写额外的错误信息，所以，我们一般写非空约束
+           			  都是直接在列的后面加上约束条件；
+           			  
+           4、检查约束（check）：
+           		
+           		就是针对于某个字段加上你自定义的条件，比如，年龄你需要制定年龄那个字段只能放0-150
+           		这个范围的数字，比如性别，你只能放男或者女；
+           		
+           		例：
+           			create table myuser(id number,
+                               uname varchar2(32) not null,
+                               upassword varchar2(32) not null,
+                               sex char(3),
+                               age number,
+                               constraint myuser_id_pk primary key(id),
+                               constraint myuser_uname_uk unique(uname),
+                               constraint myuser_sex_ck check(sex in ('男','女')),
+                               constraint myuser_age_ck check(age between 0 and 150)
+                               );
+                               
+           5、外键约束（foreign key）：
+           		
+           		之前的几种约束都是针对于一张表的约束，也就是说，你在进行一张单独的表的创建时，以上
+           		的约束足矣，而外键约束是针对于几张表来进行业务的连接的一种约束；
+           		
+           		如：设计一张person表和一个book表；要求他们之间有联系；
+           			   
+           		分析：一个人不一定有书，也有可能有多本书；一本书必须有拥有者，而且必须一本书只能有
+           				  一个拥有者；
+           				  person：pid、pname、sex、age、grade；
+           				  book：bid、bname、bprice，pid；
+			 	  
+					例：drop table person;
+						   create table person(pid number,
+						                              pname varchar2(32) not null,
+						                              sex varchar2(3) not null,
+						                              age number not null,
+						                              grade varchar2(100) not null,
+						                              constraint person_pid_pk primary key(pid),
+						                              constraint person_sex_ck check(sex in ('男','女')),
+						                              constraint person_age_ck check(age between 16 and 100)
+						                              );
+
+							drop table book;
+							create table book(bid number,
+							                            bname varchar2(32) not null,
+							                            bprice number(7,2) not null,
+							                            pid number not null,
+							                            constraint book_bid_pk primary key(bid),
+							                            constraint book_pid_fk foreign key(pid) references person(pid)
+							                            );
+							                            
+				 解释：从上面的例子可以看出，如果你不设置外键的话，那么这两张表的数据的插入并没有受
+				 		   到任何限制，比如，一本书应该有属于的人，但是若没加外键的话，可以属于一个不存
+				 		   在的person编号，这样就破坏了业务逻辑，所以外键存在的意义在于能够把多张表按照
+				 		   业务逻辑来进行约束；
+				 		   上面的例子是属于外键的一对多的关系；			             
+下午：
+							                            
+			 	 理解子表和主表：
+			 	 
+			 	 	以上面的例子为例，主表是person表，子表是book表，但是需要注意了，主表和子表是
+			 	 	一种相对的关系，并不是绝对的，就是说有一张表针对某张表来说是主表，但是它也有可
+			 	 	能是另外一张表的子表，一般来说，我们把带有外键并且这个外键的列跟另外一张表的主
+			 	 	键相关联的表称之为子表，而另外一张表为主表；
+			 	 	
+			 	 子表和主表的删除：
+			 	 	
+			 	 	当你想删除带主外键联系的两张表时，必须要先删除带外键的子表才能删除主表，否则
+			 	 	oracle会报错，说还有关联关系的表存在；
+			 	 	
+			 	 	Oracle提供了一个强制性级联删除的命令，可以在没有删除子表的情况下直接删除主表
+			 	 	并且对子表没有任何影响：drop table person cascade constraint;
+			 	 	
+			 	 	Oracle还提供了一个在进行建表外键的设置的时候，可以增加一串命令，让这个外键在
+			 	 	主表进行某段数据删除的时候直接将子表中与删除数据相关联的数据也删除掉，即：
+			 	 	constraint book_pid_fk foreign key(pid) references person(pid) on delete cascade
+			 	 	
+			 	 	同时，在进行主表的一个数据的删除时，也是需要考虑级联关系的，必须先删除子表中
+			 	 	有关联的数据才能删除主表的，或者是在建表时就在外键上加上删除时不考虑级联关系
+			 	 	的命令；
+			 	 	
+			 	 约束的修改：
+			 	 	
+			 	 	不建议在建表之后再去修改约束
+			 	 	
+			 	 	a）约束的追加：
+			 	 		 alter table+表名+add constraint+约束名+约束条件（字段）
+			 	 		 注意：已经加上约束的字段不能再进行约束的追加和修改，也就是说，约束只能追加
+			 	 		 不能修改；
+			 	 		 
+			 	 		 例：alter table person1 add constraint person1_pid_pk primary key(pid) ;
+			 	 		 
+			 	 		 建议：在已经有数据的表中，不建议进行约束的追加，因为有可能引发各种问题，我们
+			 	 		 		   使用约束的追加功能一般是在一张表建立好，然后发现自己忘记添加了部分约束
+			 	 		 		   的情况下使用；
+			 	 		 		   
+			 	 	b）约束的删除：
+			 	 	
+			 	 		 alter table+表名+drop constraint+约束名；
+			 	 		 
+			 	 		 例：alter table person1 drop constraint person1_age_ck
+			 	 		 
+			 	 	c）约束的查看：
+			 	 	
+			 	 		 select * from user_constraints where table_name = 表名；
+			 	 		 
+			 	 	d）重命名约束：
+			 	 		 
+			 	 		 alter table+表名+rename+旧约束名 to 新约束名；
+			 	 		 
+			 	 	e）启动约束：
+			 	 		 
+			 	 		 alter table+表名+enable constraint+约束名；			
+			 	 		 
+			 	 	f）禁止约束：
+			 	 		
+			 	 		 alter table+表名+disable constraint+约束名；		 	
+						 
+						 																														

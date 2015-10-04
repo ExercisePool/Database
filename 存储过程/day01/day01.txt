@@ -1,0 +1,187 @@
+一：pl/sql介绍
+    1、什么是pl/sql
+       pl/sql---procedural language/sql,过程化语言，是oralce在标准的SQL语言上的一种扩展，是Oralce独有的
+       ，它在普通的sql语句上面增加了编程语言的特点，在mysql中是不支持的，在sqlserver里面有类似于pl/sql的
+       语言，叫做T-SQL，
+    
+    2、pl/sql的特点
+       pl/sql既然是一门语言的话，那么它就具有语言的一些特征，回想下java、c等语言有些什么样的共同特征，
+       比如，可以定义变量和常量，允许使用条件语句和循环语句，还可以处理error错误；
+    
+    3、为什么要有pl/sql编程
+       首先，我们来看看我们传统的在java中使用sql语句进行使用数据库的图例
+       JDBC(sql语句)-------->DBMS--------->数据库
+       然后，咱们分析下以这种方式进行java连接数据库做处理有哪些缺陷：
+             a、一次性只能执行一条sql语句，无法进行模块化的编程，也就是说，一条sql语句，只能要么执行，要么
+                不执行，没办法让sql语句像我们的java语言一样进行某些判断、循环的智能化的执行；
+             b、速度慢，为什么说速度慢呢，因为DBMS执行的是什么？是java的字节码文件吧？那么DBMS能直接识别这
+                个字节码文件吗？不能，它需要对这个java的字节码文件进行重新编译，才能识别到sql，这在一定程度
+                上，延缓了sql的执行速度；
+             c、不安全，我们都知道，在jdbc中书写sql语句必须把各种你需要查询的字段都进行书写出来，那么在重要
+                的部门里面的项目，这些字段都是要求保密的，不能透露的信息；
+             d、浪费带宽资源；
+       那么，为了解决上面的问题，oracle的工程师就想啊，能不能弄一个东西出来，让这个东西类似于我们的缓冲区一样，
+       不需我们在Java中去一句一句的执行sql语句，而能够先把所有的sql都写好，又可以加上条件和判断，直接放在数据库
+       中，在java中，我们只需要在某个条件满足就去执行那个缓存里的数据，然后所有的判断都在数据库里执行，也不需要
+       让DBMS去重新编译；
+       最后，这东西弄出来了，就是pl/sql，他具有提高程序的运行性能，能够模块化的执行，减少网络的传输量，提高安全性
+       等特点；
+    
+    4、pl/sql有什么缺点
+       从上面咱们看到了，pl/sql有那么多的优点，那么它有什么缺点呢？就是移植性不好，也就是说在oralce中编写的plsql
+       在其他的数据库中无法执行，需要重新编写；
+       
+    5、pl/sql的开发工具
+        a、sqlplus；
+        b、pl/sql development；
+    
+    6、pl/sql的语法结构
+        create procedure 存储过程名（参数1，参数2....）
+        is
+        begin
+            sql执行语句
+        end;/
+        
+    7、pl/sql的使用案例----向emp表添加一条记录（把参数写死）
+    
+        问：刚刚写的存储过程中的插入语句执行了吗？
+        问：刚刚写入的存储过程是一个对象吗？
+    
+    8、刚刚写的存储过程如何调用？
+        exec+过程名（需要传入的参数）；
+        
+        问：这个存储过程的执行，是显式提交还是隐式提交？
+    
+    9、如何写带参数的存储过程
+        把刚刚添加上去的数据使用另外的存储过程来删掉，并且需要带参数；
+        
+        问：如果创建的变量名跟你需要删除的那个字段的名相同的话，存储过程能不能创建？能不能执行？
+        
+    10、练习
+        使用存储过程来对一张表进行增删改操作；
+    
+    11、pl/sql编写的代码块能够做什么事情
+        a、过程（存储过程）；
+        b、函数；
+        c、触发器；
+        d、包；
+        注意：它们的基本编写单元是块
+        
+    12、pl/sql的编写规范
+        a、注释：
+            单行注释：--
+            多行注释：/*....*/
+        b、标示符的命名规范：
+            变量：建议用v_作为前缀；
+            常量：建议用c_做前缀；
+            游标：建议用_cursor做后缀；
+            例外：建议用e_做前缀
+    
+    13、pl/sql块的介绍（类似于java中的类）
+        块（block）是pl/sql的基本程序单元，编写pl/sql程序实际上就是编写pl/sql块。
+        要完成简单的应用功能，可能只需要编写一个pl/sql块，但是如果你要
+        完成复杂的功能的话，就需要进行pl/sql块的嵌套
+        
+    14、pl/sql块的结构
+        分为三个部分：定义部分、执行部分、例外处理部分；
+        定义部分：declare，用来定义常量、变量、游标、例外、复杂数据类型（非必须）（多个用分号隔开）
+        执行部分：begin，要执行的pl/sql语句或者sql语句；
+        例外处理部分：exception，要处理运行的各种错误；（非必须）
+        
+    15、先使用过程来写一个helloworld，再使用块进行写出helloworld
+        代码：
+            create procedure pro3 is 
+            begin
+                dbms_output.put_line('helloworld');
+            end;/
+        发现以上的代码执行以后，无法打印出helloworld，这时，我们需要设置sqlplus能进行显示
+        set serveroutput on;
+        设置之后，可以进行显示了；
+        我们再重新书写下这个代码，我们仅仅只是想要进行一个指定文字的输出而已，并不需要创建
+        一个过程，那么我们可以省略掉这个过程的创建语句，直接写：
+            begin
+                dbms_output.put_line('helloworld');
+            end;/
+        
+    16、上面的例子是不带定义部分的块，来写一个带定义部分的例子---通过员工编号查员工名字
+        declare
+            v_ename varchar2(8);
+        begin
+            select ename into v_ename from emp where empno=&empno;
+            dbms_output.putline('雇员姓名是：'||v_ename);
+        end;
+        /
+        注：上面的&符号，代表的是一个弹窗，它后面的内容是弹窗上面所展示的信息，可以改成中文；
+        注：into代表的是把一个你需要查询到的数据放到某个变量中去进行存储，如果进行查询的时候
+            不写into的话，就会出错；
+        
+        以上的这些代码都是以一个块的形式进行存在的，如果咱们需要把它专为一个过程的话，那么我们
+        直接在这个块的基础上进行追加语句就行了：
+        代码：
+                create procedure prop(v_empno number) is 
+                v_ename varchar2(8);
+                begin
+                  select ename into v_ename from emp where empno=v_empno;
+                  dbms_output.put_line('雇员姓名是：'||v_ename);
+                end;
+                /
+        问：存储过程后面的变量定义跟declare里的变量定义有什么区别？
+        
+    17、练习：
+        写一个通过录入名字来查询出这个人的工资的块；
+        
+    18、如果我们输入一个不存在的雇员编号会出现什么问题？怎么使用块中的例外处理部分？
+        首先，先演示一遍不加例外处理模块，直接输入一个不存在的雇员编号，查看错误信息；
+        然后，通过错误信息中的代码，到文档中去找相关的错误；
+        最后，写出一个例外处理的代码；
+        declare
+            v_ename varchar2(8);
+        begin
+            select ename into v_ename from emp where empno=&empno;
+            dbms_output.putline('雇员姓名是：'||v_ename);
+        exception
+            when no_data_found then dbms_output.putline('您输入的雇员编号不存在');
+        end;
+        /
+        
+        no_data_found是什么意思呢？打开英文文档查看下，所有的错误代码所代表的含义；
+        然后，再在例外处理的下面加上一行插入的语句：
+        
+        declare
+            v_ename varchar2(8);
+        begin
+            select ename into v_ename from emp where empno=&empno;
+            dbms_output.putline('雇员姓名是：'||v_ename);
+        exception
+            when no_data_found then dbms_output.putline('您输入的雇员编号不存在');
+            insert into emp(empno,ename) values(1999,'傻瓜');
+        end;
+        /
+        
+    19、异常处理的作用
+        a、可以捕获异常并给出指定提示；
+        b、可以利用异常来进行具体的业务逻辑的处理；
+        
+    20、练习：
+        使用过程来处理一个emp表中根据ename来更改工资，要求处理异常
+        
+        代码：
+            create or replace procedure prop(v_ename varchar2,v_price number) is 
+            begin
+              update emp set sal=v_price where ename = v_ename;
+            end;
+            /
+            
+    21、如何在JDBC中来运行存储过程的DML语句
+        a、首先直接写一个JDBC的测试类来进行观察；
+        b、然后把这个执行语句完全封装成一个工具方法进行使用；
+        
+        注：存储过程的执行在sqlplus中有两种方法：
+            exec+过程名（参数列表）;
+            call+过程名（参数列表）；
+            但是在jdbc中只能使用第二种执行；
+            
+        注：CallableStatement的使用以及存储过程的sql语句的书写
+        
+    练习：编写一个过程，可以接受id和薪水，更新薪水，如果id不存在，需要
+          使用exception来捕获，并给出提示；

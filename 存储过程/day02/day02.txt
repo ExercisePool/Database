@@ -1,0 +1,325 @@
+1、函数
+   首先，我们来回顾下，oracle中的函数有哪些，怎么使用这些函数；
+   然后，让我们来看看在pl/sql中，一个函数到底该如何书写，有什么样的语法结构：
+       create or replace function 函数名(参数列表) 
+       return 返回类型 is
+       begin 
+         执行语句
+       end;
+       /
+    
+   案例：通过雇员编号来查出这个员工的年收入
+        create or replace function fun(v_empno number) 
+        return number is
+        v_total_sal number;
+        begin
+          select (sal+nvl(comm,0))*12 into v_total_sal from emp where empno = v_empno;
+          return v_total_sal;
+        end;
+        /
+   
+   如何在sqlplus中执行：
+        select fun(7788) from dual;
+   
+   如何在java中执行：
+   用resultSet接收，把上面的语句直接放到普通的JDBC查询语句中即可；
+    
+
+   
+2、包
+    a、引言：
+       我们在plsql中了解了块、函数这些概念，在我们看来，块更像是java中的类，函数就像是java
+       中的方法，只不过不同的是，plsql中的块和函数是一种平级的关系，那么在java中还存在一个
+       东西，那就是包，我们知道，java中的包是可以放各种java对象的，那么，为什么要使用包呢？
+       是不是为了更好的管理java中的类啊？那么让我们来看看plsql中的包这个概念
+   
+    b、plsql包的介绍
+        首先，plsql中的包跟java中的包的作用都是一样的，都是为了让我们更好的进行管理包里的东西，
+        只不过，plsql中管理的是各种plsql中的对象，比如过程、例外、函数等等，我们可以在plsql Development
+        来看看结构；
+        然后，plsql中的包的具体结构是什么样的
+        代码：
+            create or replace package 包名 is 
+                --放过程
+                procedure 过程名（参数列表）;
+                --放函数
+                function 函数名(参数列表) return 返回类型;
+                --放例外等....
+            end;
+        注：包中的各种对象只是进行声明，并没有具体的实现代码，类似于java中的接口而已；
+        
+    c、书写一个包，里面包含过程和函数，那么写好之后怎么用呢，我们直接输入包名，然后加个点，可以发现
+       有提示出了包里的各个对象出来，但是有用吗？
+       
+       比如我们需要定义一个包，包里面有一个过程和一个函数，过程的作用就是通过名字来修改工资，函数的
+       作用就是算出某个指定人员的年收入：
+       
+       代码：
+        create or replace package mypackage is
+            procedure prop1(v_ename varchar2,v_sal number);
+            function fun1(v_ename varchar2) return number;
+        end;
+        
+        问：如果不在包里面定义各种对象的话，这个包能不能创建成功？
+    
+    d、运行上面的代码，并且运行以下代码：
+       代码：
+        mypackage.prop1;
+       发现上面这个代码运行没有任何的效果，为什么呢？因为这只是包中各种对象的声明，并没有
+       具体的实现代码，那么，我们该如何书写包里的对象的实现呢？
+    
+    e、既然我们都说了，这个包里对各种对象的声明类似于我们java中的接口，我们知道，光光定义出一个接口
+       在java中是无法直接使用这个接口的，那么我们通过类来进行接口的实现吧，那么在plsql中，同样，我们
+       需要专门来写一个包体来对这个包中定义的对象来进行具体的实现，如下代码：      
+       
+       代码：
+        create or replace package body mypackage is
+            procedure prop1(v_ename varchar2,v_sal number) is 
+            begin
+                update emp set sal = v_sal where ename = v_ename;
+            end;
+            function fun1(v_ename varchar2) return number is
+            v_sal_total number;
+            begin
+                select (sal+nvl(comm,0))*12 into v_sal_total from emp where ename = v_ename;
+            return v_sal_total;
+            end;
+        end;
+        
+       让我们来执行下，使用exec mypackage.prop1('SMITH',888);发现能够成功执行；
+       
+       注：在包体的定义里面的各种对象的具体实现，不需要写create，其他的代码本来该怎么写，就怎么写；
+       
+       问：如果我定义一个包，里面有prop1和fun1这两个对象，那么我写包体的时候：
+           1、能只对其他一个进行实现吗？所有的对象都能执行成功吗？
+           2、能多进行一个没声明过的对象进行具体代码的实现吗？所有的对象都能执行成功吗？
+           
+    f、怎么在sqlplus中去调一个包里的对象：
+        exec/call 用户名.包名.对象名(参数列表);
+    
+    g、怎么在java中去调一个包里的对象？
+    
+3、plsql的语法---变量的定义与使用
+    引言：
+        在之前的学习中，我们使用了plsql中的块、函数、包、包体等内容，那么各位有没有注意过，这一门语言的
+        学习，咱们学的非常的笼统，什么意思呢，比如说之前的begin、end之类的关键字，为什么要这样写，它有
+        什么作用？plsql中的类型除了number和varchar2之外还有什么？plsql中的变量以及常量怎么定义？plsql里
+        的条件控制语句怎么使用？是不是还有很多问题啊，那么好，我们学习一门语言，都是最开始学习啥？变量吧
+        ，那么我们先来了解下plsql中的变量的定义以及使用；
+    
+    首先，我们来看看，plsql中的变量分了哪几种类型：
+        标量类型（scalar）；
+        复合类型（composite）；
+        参照类型（reference）；
+        lob（large object）；
+        
+        plsql类型的定义的格式：
+        变量名/常量名 类型 [not null] [:=default/expr]
+        
+        注：如果是常量的话，必须要赋初始值，并且不能改变
+            如果需要赋初始值的话，要使用:=，不是一个=
+            default值的是初始值
+            expr值的是一个pl/sql表达式，可以是其他的变量、函数或者是文本值
+            not null代表这个变量能不能为空；
+        
+        a、标量类型：
+           可变长字符串：varchar2（10）；
+           整数或浮点数：number
+           日期类型：date
+           布尔类型：boolean，注意了，如果你定义的是布尔类型的话，不能为空，并且初始值默认是false
+           
+        案例：输入一个员工编号，显示这个员工的姓名、工资以及他应缴的个人所得税
+              （假设税率为0.03）；
+                create or replace procedure prop(v_empno number) is 
+                --个人所得税的税率
+                v_sal_rate number:=0.03;
+                --员工姓名
+                v_ename varchar2(32);
+                --员工的工资
+                v_sal number;
+                --员工应该缴纳的个人所得税
+                v_money number;
+                begin
+                   select ename,sal into v_ename,v_sal from emp where empno = v_empno;
+                   v_money:=v_sal*v_sal_rate;
+                   dbms_output.put_line(v_ename||'的工资是'||v_sal||'他应该缴纳的个人所得税为'||v_money);
+                end;
+                /
+        
+        b、现在这里还有一个问题，什么问题呢，这个v_ename这个变量是varchar2类型的，并且这个变量是用来存储
+           数据并用来输出的，但是，这个32的精度代表什么呢？让我们来试验下，把它改成8的时候，我们再来执行
+           下这个过程，并且查一个ename的长度超过8的数据
+        
+        案例：略；
+            
+           从上面可以看出，如果精度低了，就会发生错误，那么当我们对一张表中的某个字段下的数据的长度不够
+           了解的时候，这时，变量该设置多少精度恰当呢？这里需要提出一个标量精度的自适应的写法：%type，
+           整个结构是：表名.我们需要标量接收的字段名%type，当我们这样写的话，就不需要去自己指定标量的类型
+           以及精度，它会根据原表中的设计进行自适应；
+        
+        案例：
+                create or replace procedure prop(v_empno number) is 
+                --个人所得税的税率
+                v_sal_rate number:=0.03;
+                --员工姓名
+                v_ename emp.ename%type;
+                --员工的工资
+                v_sal emp.sal%type;
+                --员工应该缴纳的个人所得税
+                v_money number;
+                begin
+                   select ename,sal into v_ename,v_sal from emp where empno = v_empno;
+                   v_money:=v_sal*v_sal_rate;
+                   dbms_output.put_line(v_ename||'的工资是'||v_sal||'他应该缴纳的个人所得税为'||v_money);
+                end;
+                /
+                
+        练习：编写一个过程，我们通过这个过程输入一个雇员编号，并显示这个雇员的姓名、薪水及工作岗位
+        
+        c、复合变量
+           我们通过上面的这两个例子看出了一个问题，我们要显示几个信息就得定义几个标量来接收并且显示这些信息，
+           但是，有没有想过，如果我们需要显示的信息过多的时候，我们一个个地去分别定义出这些标量，这样会不会
+           很麻烦？有没有一种办法，可以让我们不需要分别的去定义出那么多的标量去分别接收这些数据呢？还记得咱们
+           在面向对象部分讲类的时候吗？比如一个student，它里面有id，name，sex....字段，但是我们只需要使用student
+           对象就可以拥有这些所有的字段了吧？student是啥？一个类？一个类型？一个复合数据类型？是的，我们pl/sql
+           中也可以像面向对象中的类那样去定义出一个复合类型出来，类似于类的形式，让我们来看看pl/sql中的复合变量
+           怎么使用：
+           语法结构：type+你需要定义的复合变量名称+is record(标量名 标量类型,标量名 标量类型.....);
+           
+           我们把上面的题目给使用复合变量写一次：
+           
+        案例：
+            --编写一个过程，我们通过这个过程输入一个雇员编号，并显示这个雇员的姓名、薪水及工作岗位
+            create or replace procedure prop(v_in_empno number) is
+            type type_emp_mytype is record(
+                 v_ename emp.ename%type,
+                 v_sal emp.sal%type,
+                 v_job emp.job%type
+            );
+            v_info type_emp_mytype;
+            begin
+              select ename,sal,job into v_info from emp where empno = v_in_empno;
+              dbms_output.put_line('用户名为：'||v_info.v_ename||',薪水为：'||v_info.v_sal||',岗位是：'||v_info.v_job);
+            end;
+            /
+            
+            我们刚刚使用pl/sql的复合变量用来描述的是pl/sql的一个记录，在pl/sql里，这种复合变量类似于java中的类，那么
+            在plsql中有没有类似于java中的数组的复合类型呢？有的，这也是pl/sql复合变量除了可以描述记录做类似于类之外还
+            可以用来描述一个表，描述出来之后，这就类似于java中的数组了，只不过，在java中，数组都是从0开始，不能为负数
+            pl/sql里的复合变量表的下标可以为负数；
+            pl/sql表：
+            语法结构:type+你需要定义的复合变量名称+is table of 你需要描述的某张表的某个字段
+            
+        案例：
+            declare
+                type sp_table_type is table of emp.ename%type
+                index by binary_integer;
+                sp_table sp_table_type;
+            begin
+                select ename into sp_table(-1) from emp where empno=7888;
+                dbms_output.put_line('名字:'||sp_table(-1));
+            end;
+            
+            其中，sp_table_type 是pl/sql表类型；
+                  emp.ename%type 指定表的元素的类型和长度
+                  sp_table 为pl/sql表变量
+                  sp_table(0) 代表下标为0的元素
+                  index by binary_integer 指pl/sql表的下标可以是什么类型
+                  
+            注：pl/sql表类型是只需要了解的类型；
+        
+        d、参照变量（重要）
+           参照变量是指用于存放数值指针的变量，通过使用参照变量，可以使得应用程序共享相同对象，
+           从而降低内存的占用的空间。
+           参照变量分为游标变量和对象类型变量；
+           
+           让我们先来看看游标变量，提到游标，各位应该会有点印象的，在我们讲集合的时候，ArrayList的底层代码书写的时候
+           ，我们是不是定义了一个index，它叫啥？指针吧？它的作用还记得不？我们在讲JDBC的时候，ResultSet中的rs.next这
+           个方法还记得不？是不是结果集的一条条的数据被指定出来？我们之前讲述的pl/sql是不是返回的结果都是一条数据啊，
+           肯定有同学尝试过返回多条数据，但是发现报了错，让我们来想想，查询到如果有多条数据的话，在java里是一个结果集
+           是不？我们处理结果集是需要一个指针，那么在pl/sql里，如果返回的是一个结果集的话，我们是不是也需要一个类似于
+           指针的东西来处理每一条数据？并且还需要什么？循环迭代吧？好，我们来写一个查询结果是一个结果集的题目：
+           
+           游标变量的语法结构：
+           
+                定义游标类型：type 自定义游标名称 is ref cursor;
+                
+                定义一个变量为游标类型：变量名 自定义的游标名称；
+                
+                打开游标，指定游标的结果集：open 变量名 for select语句：
+                
+                取出游标：fetch+变量名+into+接收游标中数据的变量名，若有多个，用逗号隔开；
+                
+           
+        案例：通过输入部门编号来获取该部门下的员工的姓名及工资
+        
+            create or replace procedure prop(v_in_deptno number) is
+            --定义一个游标的类型
+            type wy_cursor is ref cursor;
+            --定义一个变量的类型为游标类型
+            emp_cursor wy_cursor;
+            --定义一个变量用来接收雇员名称
+            v_ename emp.ename%type;
+            --定义一个变量用来接收工资
+            v_sal emp.sal%type;
+            begin
+              --打开游标，指明这个游标对哪个查询语句中的数据进行读取
+              open emp_cursor for select ename,sal from emp where deptno=v_in_deptno;
+              --开始进行循环
+              loop
+                --取出游标指向的数据，并放到指定的变量中
+                fetch emp_cursor into v_ename,v_sal;
+                --给出循环结束条件
+                exit when emp_cursor%notfound;
+                --输出变量中的内容
+                dbms_output.put_line('姓名：'||v_ename||'，收入为：'||v_sal);
+                --结束循环
+              end loop;
+              --关闭游标资源
+              close emp_cursor;
+            --结束块
+            end;
+            /
+            
+            注：在使用游标变量来获取结果集里的数据时，都会配套循环来使用，并且一定要给出结束条件；      
+                在使用fetch取出游标的时候，数据库做了2件事情，一件是取出指定的那条数据，二是把游标
+                指向了下一条数据；
+                
+        练习：在上面题目的基础上，加上一条，如果员工的工资少于1000的话，给它的工资加上100；
+        提示：需要用到if...then...end if;
+        
+        答案：
+            create or replace procedure prop(v_in_deptno number) is
+            --定义一个游标的类型
+            type wy_cursor is ref cursor;
+            --定义一个变量的类型为游标类型
+            emp_cursor wy_cursor;
+            --定义一个变量用来接收雇员名称
+            v_ename emp.ename%type;
+            --定义一个变量用来接收工资
+            v_sal emp.sal%type;
+            --定义一个变量用来接收需要修改的员工的编号
+            v_empno emp.sal%type;
+            begin
+              --打开游标，指明这个游标对哪个查询语句中的数据进行读取
+              open emp_cursor for select ename,sal,empno from emp where deptno=v_in_deptno;
+              --开始进行循环
+              loop
+                --取出游标指向的数据，并放到指定的变量中
+                fetch emp_cursor into v_ename,v_sal,empno;
+                --给出循环结束条件
+                exit when emp_cursor%notfound;
+                --输出变量中的内容
+                --dbms_output.put_line('姓名：'||v_ename||'，收入为：'||v_sal);
+                --如果游标指向的某一行数据中的工资少于1000的话，让这个数据所对应的编号的员工的收入加100
+                if v_sal<1000 then
+                update emp set sal = sal+100 where empno = v_empno;
+                --结束if；
+                end if;
+                --结束循环
+              end loop;
+              --关闭游标资源
+              close emp_cursor;
+            --结束块
+            end;
+            /
